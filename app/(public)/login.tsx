@@ -1,4 +1,5 @@
 import { useSignIn } from "@clerk/clerk-expo";
+import * as AuthSession from "expo-auth-session";
 import { Link } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -13,7 +14,6 @@ import Spinner from "react-native-loading-spinner-overlay";
 
 const Login = () => {
   const { signIn, setActive, isLoaded } = useSignIn();
-
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,6 +38,31 @@ const Login = () => {
     }
   };
 
+  const onGoogleSignIn = async () => {
+    if (!isLoaded) {
+      return;
+    }
+
+    try {
+      const redirectUrl =
+        "https://cosmic-panther-54.accounts.dev/v1/oauth_callback";
+
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl,
+        redirectUrlComplete: AuthSession.makeRedirectUri({
+          scheme: "studo", // Matches your app scheme in app.json
+          path: "oauth/callback", // Deep link back to your app
+        }),
+      });
+
+      console.log("Google Sign-In initiated successfully");
+    } catch (err: any) {
+      console.error("Google Sign-In Error: ", err);
+      alert(err.errors?.[0]?.message || "Google Sign-In failed");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Spinner visible={loading} />
@@ -57,7 +82,13 @@ const Login = () => {
         style={styles.inputField}
       />
 
-      <Button onPress={onSignInPress} title="Login" color={"#6c47ff"}></Button>
+      <Button onPress={onSignInPress} title="Login" color={"#6c47ff"} />
+
+      <Button
+        onPress={onGoogleSignIn}
+        title="Sign in with Google"
+        color={"#DB4437"}
+      />
 
       <Link href="/reset" asChild>
         <Pressable style={styles.button}>
